@@ -1,115 +1,230 @@
+import 'package:app/utils/permission.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
+import 'dart:io';
+import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app/call_sample.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(MaterialApp(home: MyHome()));
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class MyHome extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+  _MyHomeState createState() => new _MyHomeState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class _MyHomeState extends State<MyHome> {
+  bool isOnline = true;
+  late TextEditingController _textSessionController;
+  late TextEditingController _textUserNameController;
+  late TextEditingController _textUrlController;
+  late TextEditingController _textSecretController;
+  late TextEditingController _textPortController;
+  late TextEditingController _textIceServersController;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+  void initState() {
+    super.initState();
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+    _textSessionController = TextEditingController(
+        text: 'Session-flutter-test-${Random().nextInt(1000)}');
+    _textUserNameController =
+        TextEditingController(text: 'FlutterUser${Random().nextInt(1000)}');
+    _textUrlController = TextEditingController(text: 'demos.openvidu.io');
+    _textSecretController = TextEditingController(text: 'MY_SECRET');
+    _textPortController = TextEditingController(text: '443');
+    _textIceServersController =
+        TextEditingController(text: 'stun.l.google.com:19302');
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+    _loadSharedPref();
+    // _liveConn();
+    PermissionChecker.check(); //카메라, 마이크 권한
   }
 
+  Future<void> _loadSharedPref() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _textUrlController.text =
+        prefs.getString('textUrl') ?? _textUrlController.text;
+    _textSecretController.text =
+        prefs.getString('textSecret') ?? _textSecretController.text;
+    _textPortController.text =
+        prefs.getString('textPort') ?? _textPortController.text;
+    _textIceServersController.text =
+        prefs.getString('textIceServers') ?? _textIceServersController.text;
+    print('Loaded user inputs value.');
+  }
+
+  Future<void> _saveSharedPref() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('textUrl', _textUrlController.text);
+    await prefs.setString('textSecret', _textSecretController.text);
+    await prefs.setString('textPort', _textPortController.text);
+    await prefs.setString('textIceServers', _textIceServersController.text);
+    print('Saved user inputs values.');
+  }
+
+  // Future<void> _liveConn() async {
+  //   await _checkOnline();
+  //   Timer.periodic(Duration(seconds: 5), (timer) async {
+  //     await _checkOnline();
+  //   });
+  // }
+
+  // Future<void> _checkOnline() async {
+  //   try {
+  //     final result = await InternetAddress.lookup('google.com');
+  //     if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+  //       if (!isOnline) {
+  //         isOnline = true;
+  //         setState(() {});
+  //         print('Online..');
+  //       }
+  //     }
+  //   } on SocketException catch (_) {
+  //     if (isOnline) {
+  //       isOnline = false;
+  //       setState(() {});
+  //       print('..Offline');
+  //     }
+  //   }
+  // }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+    return new Scaffold(
+      appBar: new AppBar(
+          title: const Text('Flutter openVidu demo'),
+          actions: <Widget>[
+            Row(children: <Widget>[
+              isOnline
+                  ? Image(
+                      image: AssetImage('assets/openvidu_logo.png'),
+                      fit: BoxFit.fill,
+                      width: 35,
+                    )
+                  : Image(
+                      image: AssetImage('assets/offline_icon.png'),
+                      fit: BoxFit.fill,
+                      width: 35,
+                    ),
+            ]),
+          ]),
+      drawer: Drawer(
+          child: ListView(
+        children: <Widget>[
+          ListTile(
+            leading: CircleAvatar(
+                backgroundImage: AssetImage('assets/openvidu_logo.png')),
+            title: Text("Flutter openVidu demo"),
+            subtitle: Text("v 1.0.0"),
+          ),
+          ListTile(
+              leading: Icon(Icons.home),
+              title: Text("Home"),
+              onTap: () {
+                Navigator.of(context).pop();
+              }),
+          InkWell(
+              child: new ListTile(
+                  leading: Icon(Icons.insert_link), title: Text("GitHub")),
+              onTap: () =>
+                  launch('https://github.com/cyb3rcod3/flutter-openvidu-demo')),
+          InkWell(
+              child: new ListTile(
+                  leading: Icon(Icons.insert_link), title: Text("openVidu")),
+              onTap: () => launch('https://openvidu.io')),
+        ],
+      )),
+      body: Container(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(10.0),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(height: 10),
+                TextField(
+                  controller: _textSessionController,
+                  decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(5),
+                      border: OutlineInputBorder(),
+                      labelText: 'Session room name',
+                      hintText: 'Enter session room name'),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _textUserNameController,
+                  decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(5),
+                      border: OutlineInputBorder(),
+                      labelText: 'Session username',
+                      hintText: 'Enter username'),
+                ),
+                SizedBox(height: 40),
+                TextField(
+                  controller: _textUrlController,
+                  decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(5),
+                      border: OutlineInputBorder(),
+                      labelText: 'openVidu server url',
+                      hintText: 'Enter openVidu server url'),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _textPortController,
+                  decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(5),
+                      border: OutlineInputBorder(),
+                      labelText: 'openVidu server port',
+                      hintText: 'Enter openVidu server port'),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _textSecretController,
+                  decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(5),
+                      border: OutlineInputBorder(),
+                      labelText: 'openVidu server secret',
+                      hintText: 'Enter openVidu server secret'),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _textIceServersController,
+                  decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(5),
+                      border: OutlineInputBorder(),
+                      labelText: 'Ice server',
+                      hintText: 'Enter ice server url'),
+                ),
+                SizedBox(
+                  height: 30,
+                ),
+                ElevatedButton(
+                  child: Text(
+                    isOnline ? 'JoinRoom' : '   Offline  ',
+                    style: TextStyle(fontSize: 20.0),
+                  ),
+                  onPressed: isOnline
+                      ? () => Navigator.push(context,
+                              MaterialPageRoute(builder: (context) {
+                            _saveSharedPref();
+                            return CallSampleWidget(
+                                server:
+                                    '${_textUrlController.text}:${_textPortController.text}',
+                                sessionName: _textSessionController.text,
+                                userName: _textUserNameController.text,
+                                secret: _textSecretController.text,
+                                iceServer: _textIceServersController.text);
+                          }))
+                      : null,
+                ),
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
